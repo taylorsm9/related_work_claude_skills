@@ -6,15 +6,15 @@ It is built for a small, curated set (under about 20 papers). You fetch every PD
 
 ## Requirements
 
-- **Claude Code 2.1.292 or newer.** The subagent definitions pin `model` and `effort`, and per-launch effort handling needs this version.
-- **Python 3.9+** (standard library only).
-- **Zotero** with **Better BibTeX**, for the bibliography.
-- **humanizer** (https://github.com/blader/humanizer), for stage 9:
+- Claude Code 2.1.292 or newer. The subagent definitions pin `model` and `effort`, and per-launch effort handling needs this version.
+- Python 3.9+ (standard library only).
+- Zotero with Better BibTeX, for the bibliography.
+- humanizer (https://github.com/blader/humanizer), for stage 9:
   ```
   /plugin marketplace add blader/humanizer
   /plugin install humanizer@humanizer
   ```
-- *Optional:* a Semantic Scholar API key (free, request at semanticscholar.org/product/api) in `S2_API_KEY`. Without it requests share a throttled pool and may fail with HTTP 429.
+- Optional: a Semantic Scholar API key (free, request at semanticscholar.org/product/api) in `S2_API_KEY`. Without it requests share a throttled pool and may fail with HTTP 429.
 
 ### Environment variables to leave unset
 
