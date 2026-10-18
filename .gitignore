@@ -1,0 +1,13 @@
+# PDFs are usually copyrighted. Keep them out of the repository, especially a public one.
+# Remove these lines only if every PDF is openly licensed and you intend to share them.
+*.pdf
+*.PDF
+
+# Local environment
+.env
+__pycache__/
+*.pyc
+.DS_Store
+
+# IDE
+.idea/
