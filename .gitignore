@@ -3,11 +3,30 @@
 *.pdf
 *.PDF
 
+# Pipeline outputs. Everything the stages write is ignored, so the template stays clean; the
+# directories themselves are kept by their .gitkeep files. In a project made from this template,
+# delete this block (or the lines for notes/ and writing/) if you want to version your run.
+/checks/**
+/expand/**
+/library/**
+/manual/**
+/notes/**
+/project/**
+/research/**
+/writing/**
+!/*/**/
+!/**/.gitkeep
+!/project/README.md
+
+# Local archive of finished runs (old STATUS.md, change logs); never committed.
+/archive/
+
 # Local environment
 .env
 __pycache__/
 *.pyc
 .DS_Store
+.claude/settings.local.json
 
 # IDE
 .idea/
