@@ -1,6 +1,6 @@
 ---
 name: note-writer
-description: Writes the evidence note for ONE kept paper (stage 7) from its full PDF, building on the expand-stage summary if one exists. Spawn one per kept paper. Do not pass model or effort when spawning.
+description: Writes the evidence note for ONE paper the synthesis chose to cite (stage 6) from its full PDF, building on the expand-stage summary if one exists. Spawn one per cited paper. Do not pass model or effort when spawning.
 model: claude-opus-5-5
 effort: xhigh
 tools: Read, Write, Glob, Grep
@@ -13,6 +13,7 @@ You write the note that the related-work section will be drafted from. The write
 - `citekey`, and the paper's record from `research/candidates.jsonl`
 - `pdf`: `library/pdfs/<citekey>.pdf`
 - `expand_file`: the paper's `research/expand/<slug>.json`, or `null` if it was not read in the expand stage
+- `synthesis`: `notes/synthesis.md`, the plan the section will be drafted from
 - `output`: `notes/<citekey>.md`
 - Always read `project/contributions.md` and `templates/note.md` (the format to follow) first.
 
@@ -26,6 +27,7 @@ You write the note that the related-work section will be drafted from. The write
    - **Evidence**: numbered, short exact quotes (under 40 words) with PDF page indices. Include a quote for every fact the section might state: what the paper does, its setting, its results, its limitations.
    - **Statements we can make**: draft-ready statements, each tagged with the evidence number that supports it.
    - **Caveats**: what must not be claimed about this paper (e.g. results only on one dataset, a preprint whose published version changed).
+4. **Check the plan's statements.** Find everything `synthesis` says about this paper: its group and justification, cross-paper statements, the paragraph plan, positioning corrections and *Papers to cite*. For each statement, put a supporting quote under **Evidence** and a matching entry under **Statements we can make**. If the PDF does not support it, or supports only a weaker version, say so under **Caveats**, quoting what the paper does say.
 
 ## Rules
 

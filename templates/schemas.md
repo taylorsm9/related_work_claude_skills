@@ -59,7 +59,7 @@ One JSON object per line, one line per paper. Only the main session writes this 
 | `relations[Cn].rel` | `overlaps` (does part of what Cn claims), `differs` (same problem or method family, different in a way that matters for Cn), `unrelated`, `unclear` |
 | `role` | `closest-prior`, `baseline`, `enabling` (a method, dataset or tool the project builds on), `background`, `off-topic` |
 | `basis` | `metadata` (title only), `abstract`, `full-text` |
-| `status` | `candidate`, `fetch-for-expand`, `expanded`, `keep`, `maybe`, `reject` |
+| `status` | `candidate`, `fetch-for-expand`, `expanded` (read in full), `keep` (chosen by the synthesis to cite), `reject` (`decision_reason` says why); `maybe` is no longer used |
 | `priority` | 1 = must read in full, 2 = probably relevant, 3 = background at most, 4 = off-topic |
 
 
@@ -67,6 +67,7 @@ One JSON object per line, one line per paper. Only the main session writes this 
 - `priority` comes from the `candidate-assessor`; after the expand stage it is derived from the full-text judgment (1 if the paper overlaps a claim or is closest prior work or a baseline, 2 if it differs or is enabling, 3 otherwise, 4 if off-topic).
 - `assessment_note` holds the assessor's note, or the expand status if the PDF was unreadable.
 - `relation_summary` is filled in by the expand stage (full text); before that it is `null`.
+- `pdf` is `null` or a repo-relative path: `expand/<file>.pdf` (expand stage, copied from Zotero or dropped in by the human) or `library/pdfs/<citekey>.pdf` (after intake).
 - A full-text judgment is never overwritten by a later abstract-based assessment.
 
 ## `research/abstracts.jsonl`
@@ -93,7 +94,7 @@ A cache, one `{"id", "abstract"}` per line, written by `candidates.py add`. Abst
       "role": "closest-prior",
       "basis": "abstract",
       "priority": 1,
-      "note": "optional: anything the screener should know, e.g. 'abstract vague on method'"
+      "note": "optional: anything a later stage should know, e.g. 'abstract vague on method'"
     }
   ]
 }
@@ -166,3 +167,28 @@ A cache, one `{"id", "abstract"}` per line, written by `candidates.py add`. Abst
 - `verdict`: `supported`, `partly` (true but overstated or imprecise), `unsupported` (the paper does not say this), `wrong-paper` (the claim belongs to a different work, often the original that this paper cites).
 - `suggested_fix`: a minimal rewrite of the sentence, or of the citing clause, that the evidence supports; `null` when supported.
 - `bib_issues`: strings, e.g. `"entry is the arXiv preprint; a published version exists"`, `"no DOI or arXiv ID"`.
+
+## `notes/synthesis-verify/<citekey>-<n>.json` (written by `literature-mapper` in verify mode)
+
+```json
+{"citekey": "smith2024", "property": "one sentence stating the property checked", "verdict": "partly", "detail": "one or two sentences", "evidence": [{"quote": "short exact quote", "page": 4}]}
+```
+
+- `<n>` numbers the properties checked for that paper, from 1.
+- `verdict`: `yes`, `no`, or `partly` (`detail` says exactly which part holds).
+- `evidence`: 1–3 exact quotes under 40 words, with PDF page indices.
+
+## Synthesis-stage Markdown files
+
+Written by stage 5; each follows its template.
+
+| File | Written by | Template |
+|---|---|---|
+| `notes/field/<citekey>-related.md` | `related-work-extractor`: the paper's related-work section, verbatim, citations resolved to titles | `templates/related-work-extract.md` |
+| `notes/field/papers.md` | main session: citekey, title and year per paper in the synthesis set, nothing about the project | — |
+| `notes/field/digest.md`, `notes/summaries-digest.md` | `scripts/digest.py`: named sections of the extractions and the summaries, one block per paper | — |
+| `notes/field-taxonomy.md` | `taxonomy-builder`: the field's categories and distinctions | `templates/field-taxonomy.md` |
+| `notes/summaries/<citekey>.md`, `notes/ours-summary.md` | `paper-summarizer` / main session: claim-free summary | `templates/paper-summary.md` |
+| `notes/synthesis-map.md` | `literature-mapper` (map mode): concept matrix, relations, candidate organizations | `templates/synthesis-map.md` |
+| `notes/synthesis.md` | main session: groups, positioning, paragraph plan, papers to cite | `templates/synthesis.md` |
+| `notes/synthesis-review.md` | `synthesis-reviewer` | — |

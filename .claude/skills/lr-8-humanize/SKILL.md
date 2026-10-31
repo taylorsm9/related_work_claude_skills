@@ -1,10 +1,10 @@
 ---
-name: lr-9-humanize
-description: Stage 9 of the related-work pipeline. Runs the humanizer skill on writing/related_work.tex to remove AI writing patterns, then verifies that every citation key and the LaTeX survived unchanged.
+name: lr-8-humanize
+description: Stage 8 of the related-work pipeline. Runs the humanizer skill on writing/related_work.tex to remove AI writing patterns, then verifies that every citation key and the LaTeX survived unchanged.
 disable-model-invocation: true
 ---
 
-# Stage 9: Humanize
+# Stage 8: Humanize
 
 **Purpose:** edit the draft's prose with humanizer, without changing what it claims or which papers it cites.
 
@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 ## Steps
 
-1. Read `STATUS.md` and follow the stage-start rule in `CLAUDE.md`: the gate is that stage 8 is done and `writing/related_work.tex` exists. Copy `writing/related_work.tex` to `writing/related_work.v2-pre-humanizer.tex`.
+1. Read `STATUS.md` and follow the stage-start rule in `CLAUDE.md`: the gate is that stage 7 is done and `writing/related_work.tex` exists. Copy `writing/related_work.tex` to `writing/related_work.v2-pre-humanizer.tex`.
 
 2. **Run humanizer** on `writing/related_work.tex` (use the humanizer skill; as a plugin it is `/humanizer:humanizer`). Give it the file path so it edits only the prose, and these constraints:
    - Keep every `\cite{…}` command exactly as it is, attached to the same claim.
@@ -26,6 +26,6 @@ disable-model-invocation: true
 
 5. Run `python3 scripts/cites.py check-bib writing/related_work.tex --bib library/refs.bib`.
 
-6. **Update `STATUS.md`:** stage 9 `done`, date, next action "Run `/lr-10-check`".
+6. **Update `STATUS.md`:** stage 8 `done`, date, next action "Run `/lr-9-check`".
 
 7. Report: the cite-key comparison result, any repairs, and the word count before and after.

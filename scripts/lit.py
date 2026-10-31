@@ -31,7 +31,7 @@ S2_RECS = "https://api.semanticscholar.org/recommendations/v1"
 ARXIV_API = "https://export.arxiv.org/api/query"
 DBLP_API = "https://dblp.org/search/publ/api"
 S2_FIELDS = "paperId,externalIds,title,year,venue,authors,citationCount,url"
-USER_AGENT = "lit-review-template/0.1 (%s)" % os.environ.get("LIT_MAILTO", "no contact set")
+USER_AGENT = "related_work_claude_skills/0.1 (%s)" % os.environ.get("LIT_MAILTO", "no contact set")
 
 _last_call = {}
 _MIN_GAP = {"s2": 1.1, "arxiv": 3.1, "dblp": 1.0}
@@ -197,12 +197,65 @@ def s2_batch_ids(id_list, abstract):
     return out
 
 
-def s2_batch(a):
+def id_args(a):
     ids = list(a.ids or [])
     if a.ids_file:
         with open(a.ids_file, encoding="utf-8") as f:
             ids += [line.strip() for line in f if line.strip()]
-    return s2_batch_ids(ids, a.abstract)
+    return ids
+
+
+def s2_batch(a):
+    return s2_batch_ids(id_args(a), a.abstract)
+
+
+PUB_FIELDS = "paperId,externalIds,title,year,venue,authors,url,publicationVenue,journal,openAccessPdf"
+
+
+def _arxiv_only(name):
+    name = (name or "").strip().lower()
+    return not name or "arxiv" in name or name == "corr"
+
+
+def published_links(a):
+    """Whether each paper has a version outside arXiv, and links to it (page links first)."""
+    ids = id_args(a)
+    out = []
+    for i in range(0, len(ids), 500):
+        chunk = ids[i:i + 500]
+        res = http("s2", S2_GRAPH + "/paper/batch", {"fields": PUB_FIELDS},
+                   body={"ids": [s2_ref(x) for x in chunk]})
+        for asked, p in zip(chunk, res):
+            rec = s2_record(p)
+            if not rec:
+                out.append({"id": asked, "ids": empty_ids(), "title": None, "year": None, "venue": None,
+                            "authors": None, "abstract": None, "url": None, "citation_count": None,
+                            "extra": {"requested_id": asked, "found": False}})
+                continue
+            ext = p.get("externalIds") or {}
+            venue = (p.get("publicationVenue") or {}).get("name") or p.get("venue")
+            journal = (p.get("journal") or {}).get("name")
+            dblp = ext.get("DBLP") if not (ext.get("DBLP") or "").startswith("journals/corr/") else None
+            links = []
+            if rec["ids"]["doi"]:
+                links.append({"kind": "doi", "url": "https://doi.org/" + rec["ids"]["doi"]})
+            if ext.get("ACL"):
+                links.append({"kind": "acl-anthology", "url": "https://aclanthology.org/%s/" % ext["ACL"]})
+            if dblp:
+                links.append({"kind": "dblp-record", "url": "https://dblp.org/rec/%s.html" % dblp})
+            oa = (p.get("openAccessPdf") or {}).get("url")
+            if oa and "arxiv.org" not in oa:
+                links.append({"kind": "open-access-pdf", "url": oa})
+            published = bool(links) or not _arxiv_only(venue) or not _arxiv_only(journal)
+            rec["extra"].update({
+                "requested_id": asked, "found": True, "published": published,
+                "published_venue": None if _arxiv_only(venue) else venue,
+                "journal": None if _arxiv_only(journal) else journal,
+                "links": links, "best_link": links[0]["url"] if links else None,
+                "arxiv_abs": "https://arxiv.org/abs/" + rec["ids"]["arxiv"] if rec["ids"]["arxiv"] else None,
+            })
+            out.append(rec)
+    return out
 
 
 def _edges(record_id, kind, limit):
@@ -428,6 +481,12 @@ def main():
     sp.add_argument("--ids", nargs="*")
     sp.add_argument("--ids-file", help="file with one id per line")
     sp.add_argument("--abstract", action="store_true")
+
+    sp = add("published-links", published_links,
+             "for fetch lists: does each paper have a version outside arXiv, and links to it "
+             "(extra: published, published_venue, journal, links, best_link, arxiv_abs)")
+    sp.add_argument("--ids", nargs="*")
+    sp.add_argument("--ids-file", help="file with one id per line")
 
     sp = add("s2-references", s2_references, "papers this paper cites, with citation contexts")
     sp.add_argument("--id", required=True)

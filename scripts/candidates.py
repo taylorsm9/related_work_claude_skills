@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Maintain research/candidates.jsonl (one record per paper). See templates/schemas.md.
 
-Only the main session runs the commands that write (add, add-manual, merge-*, set).
+Only the main session runs the commands that write (add, add-manual, merge-*, set, collect-pdfs).
 Standard library only.
 """
 
@@ -373,6 +373,60 @@ def cmd_set(a):
     print("%s updated" % rec["id"])
 
 
+def bib_matches(rec, entries):
+    """Zotero export entries for a record: by DOI, then arXiv ID, then best title (similarity >= 0.9)."""
+    for field in ("doi", "arxiv"):
+        value = rec["ids"].get(field)
+        hits = [e for e in entries if value and e[field] == value]
+        if hits:
+            return hits
+    scored = [(title_similarity(rec.get("title") or "", e["title"]), e) for e in entries]
+    best = max((s for s, _ in scored), default=0)
+    return [e for s, e in scored if best >= 0.9 and s == best]
+
+
+def cmd_collect_pdfs(a):
+    import bib
+    entries = [bib.summary(e) for e in bib.load(a.bib)]
+    rows = load()
+    matched, copied, no_pdf, absent, conflicts = set(), [], [], [], []
+    for r in rows:
+        hits = bib_matches(r, entries)
+        matched.update(e["key"] for e in hits)
+        if r["status"] != a.status or r.get("pdf"):
+            continue
+        with_pdf = [e for e in hits if e["pdfs"]]
+        if not hits:
+            absent.append(r)
+            continue
+        if not with_pdf:
+            no_pdf.append((r, hits[0]["key"]))
+            continue
+        dest = os.path.relpath(os.path.join(ROOT, a.dest, slug(r["id"]) + ".pdf"), ROOT)
+        if not bib.copy_pdf(with_pdf[0]["pdfs"][0], os.path.join(ROOT, dest)):
+            conflicts.append((r, dest))
+            continue
+        r["pdf"] = dest
+        r["updated"] = today()
+        copied.append((r, with_pdf[0]["key"]))
+    save(rows)
+    for r, key in copied:
+        print("copied            %s <- %s" % (r["id"], key))
+    for r, key in no_pdf:
+        print("no PDF in Zotero  %s (%s)" % (r["id"], key))
+    for r in absent:
+        print("not in Zotero     %s | %s" % (r["id"], r["title"]))
+    for r, dest in conflicts:
+        print("conflict          %s: %s exists and is a different file; not overwritten" % (r["id"], dest))
+    extra = [e for e in entries if e["key"] not in matched]
+    for e in extra:
+        print("no candidate      %s | %s | pdf: %s" % (e["key"], e["title"], "yes" if e["pdfs"] else "no"))
+    print("status %s without a PDF: %d; copied %d, no PDF in Zotero %d, not in Zotero %d, conflicts %d. "
+          "Zotero entries matching no candidate: %d"
+          % (a.status, len(copied) + len(no_pdf) + len(absent) + len(conflicts), len(copied), len(no_pdf),
+             len(absent), len(conflicts), len(extra)))
+
+
 def cmd_validate(a):
     rows = load()
     claims = claim_ids()
@@ -463,6 +517,8 @@ def cmd_list(a):
         if a.basis and r.get("basis") != a.basis:
             continue
         if a.missing_pdf and r.get("pdf"):
+            continue
+        if a.has_citekey and not r.get("citekey"):
             continue
         if a.json:
             print(json.dumps(r, ensure_ascii=False))
@@ -558,6 +614,13 @@ def main():
     sp.add_argument("pairs", nargs="+", metavar="field=value")
     sp.set_defaults(fn=cmd_set)
 
+    sp = sub.add_parser("collect-pdfs", help="copy PDFs from the Zotero export (library/refs.bib) for records "
+                                             "with a given status and no pdf, and set their pdf field")
+    sp.add_argument("--status", default="fetch-for-expand")
+    sp.add_argument("--dest", default="expand", help="folder for the copies, relative to the repository")
+    sp.add_argument("--bib", default=os.path.join(ROOT, "library", "refs.bib"))
+    sp.set_defaults(fn=cmd_collect_pdfs)
+
     sub.add_parser("validate", help="check the file against templates/schemas.md").set_defaults(fn=cmd_validate)
 
     sp = sub.add_parser("render", help="write research/candidates.md for humans")
@@ -570,6 +633,7 @@ def main():
     sp.add_argument("--role")
     sp.add_argument("--basis")
     sp.add_argument("--missing-pdf", action="store_true", help="only records with no pdf")
+    sp.add_argument("--has-citekey", action="store_true", help="only records with a citekey (the synthesis set)")
     sp.add_argument("--json", action="store_true", help="print full records (ids, pdf, links) as JSON lines")
     sp.set_defaults(fn=cmd_list)
 

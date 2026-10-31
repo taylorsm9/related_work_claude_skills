@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 **Reads:** `project/contributions.md` (must be `status: approved`); `templates/schemas.md`.
 **Writes:** `research/candidates.jsonl`, `research/abstracts.jsonl`, `research/search-log.md`, `research/assessments/s1-*.json`, `research/candidates.md`, `manual/fetch-for-expand.md`, `STATUS.md`.
-**Gate:** the human fetches the listed PDFs into `expand/`.
+**Gate:** the human saves the listed papers, with PDFs, into the project's Zotero collection, which auto-exports to `library/refs.bib`.
 
 ## Steps
 
@@ -44,9 +44,9 @@ disable-model-invocation: true
    - a mix of established and recent papers.
    Mark them with `python3 scripts/candidates.py set <id> status=fetch-for-expand`.
 
-9. **Write `manual/fetch-for-expand.md`** from `templates/fetch-list.md`. Replace *What to do* with: "Download these PDFs into `expand/` (any filenames are fine). Prefer the published version when there is one. You can also add any other PDFs you think are relevant; the expand stage will identify them. Then run `/lr-3-expand`." List the chosen papers with the links from their records, read with `python3 scripts/candidates.py list --status fetch-for-expand --json` (arXiv abs and PDF links from `ids.arxiv`, `https://doi.org/` from `ids.doi`, Semantic Scholar from `ids.s2`). Never construct an identifier that is not in the record.
+9. **Write `manual/fetch-for-expand.md`** from `templates/fetch-list.md`, as round 1. Use the template's standard *What to do* text. Look up published versions of the chosen papers: write their ids to `research/tmp/round1-ids.txt` (from `python3 scripts/candidates.py list --status fetch-for-expand --json`) and run `python3 scripts/lit.py published-links --ids-file research/tmp/round1-ids.txt --out research/tmp/round1-links.json`. Papers with `extra.published: true` go under *Published version exists*, with `extra.best_link` and the other `extra.links`; the rest go under *On arXiv only*. Link arXiv **abstract pages** (`https://arxiv.org/abs/<id>`, from `ids.arxiv`), never PDF links: Zotero's connector reads the metadata from the abstract page. Never construct an identifier that is not in the record or the lookup. If the lookup fails, list every paper under *On arXiv only* (or with its DOI link if it has no arXiv ID), and say in the report that published versions were not checked.
 
-10. **Update `STATUS.md`:** stage 1 `done`, stage 2 `waiting on human`, date, next action "Human downloads the PDFs in `manual/fetch-for-expand.md` into `expand/`, then runs `/lr-3-expand`".
+10. **Update `STATUS.md`:** stage 1 `done`, stage 2 `waiting on human`, date, next action "Human saves the papers in `manual/fetch-for-expand.md` into the Zotero collection, then runs `/lr-3-expand`".
 
 11. **Report** in a few lines: candidates found, per source; how many are priority 1 and 2; the papers chosen for expand and why; any claim with no overlapping candidate (worth the human's own search).
 

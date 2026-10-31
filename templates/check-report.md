@@ -1,6 +1,6 @@
 # Citation check report
 
-Written by: stage 10 on <date>. File checked: `writing/related_work.tex`.
+Written by: stage 9 on <date>. File checked: `writing/related_work.tex`.
 
 ## Summary
 

@@ -21,7 +21,7 @@ disable-model-invocation: true
    - **Claims:** 3–5 claims of what is new, each one sentence, specific enough that a prior paper could be shown to overlap with it. Prefer the paper's own stated contributions. Split compound claims. For each, fill the facets: problem, method or mechanism, evaluation, and what would count as overlap.
    - **Known related papers:** papers the draft already cites or names as baselines, with arXiv IDs or DOIs only if they appear in the draft. These become seeds for stage 1.
    - **Scope:** field, years, and anything that looks related but is out of scope, if the draft makes it clear.
-   - **Target section:** venue and length if known; otherwise "2–4 paragraphs, about 400 words".
+   - **Target section:** venue, length in words and citation requirements if known; otherwise "about 400 words" and "the synthesis chooses".
    Leave `status: draft`.
 4. Where the draft is ambiguous (for example, it is unclear whether something is a contribution or prior work), write the question as an HTML comment next to the claim instead of guessing.
 5. Update `STATUS.md`: stage 0 `waiting on human`, today's date, next action "Human edits `project/contributions.md` and sets `status: approved`, then runs `/lr-1-search`".

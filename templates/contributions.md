@@ -48,5 +48,6 @@ status: draft
 ## Target section
 
 - **Venue:** 
-- **Length:** e.g. 2–4 paragraphs, about 400 words
+- **Length:** about <n> words (e.g. about 400). The drafter decides the number of paragraphs.
+- **Citations:** a limit or a range if you have one (e.g. "at most 25 papers"), and any papers that must be cited; otherwise the synthesis chooses
 - **Citation style:** `\cite{}` with Better BibTeX keys

@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Read library/refs.bib (a Better BibTeX export). Standard library only.
+"""Read library/refs.bib (a Better BibTeX export of the project's Zotero collection). Standard library only.
 
-  bib.py list                     every entry: key, type, title, year, doi, arxiv
+  bib.py list                     every entry: key, type, title, year, doi, arxiv, pdfs
   bib.py match --doi D | --arxiv A | --title T
   bib.py show KEY                 the raw entry text
+  bib.py pdf KEY [--copy-to P]    the entry's PDF in Zotero's storage; optionally copy it to P
 """
 
 import argparse
+import filecmp
 import json
 import os
 import re
+import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -73,9 +76,27 @@ def parse_fields(s):
             while k < len(s) and s[k] not in ",\n":
                 k += 1
             value = s[j:k].strip()
-        fields[name] = re.sub(r"\s+", " ", value).strip()
+        # File paths stay as written: collapsing whitespace would turn a no-break space in a
+        # file name into a plain space and break the path.
+        fields[name] = value.strip() if name == "file" else re.sub(r"\s+", " ", value).strip()
         i = k + 1
     return fields
+
+
+def pdf_paths(fields):
+    """PDF attachments listed in Better BibTeX's `file` field that exist on disk. The field holds
+    paths separated by ';', either bare or JabRef-style 'description:path:mimetype'."""
+    paths = []
+    for part in re.split(r"(?<!\\);", fields.get("file") or ""):
+        part = part.strip()
+        m = re.match(r"^(.*?)(?<!\\):(.+)(?<!\\):([\w.+-]+/[\w.+-]+)$", part)
+        if m:
+            part = m.group(2)
+        part = re.sub(r"(?<!\\)[{}]", "", part)
+        part = re.sub(r"\\([\\:;{}_&%#$ ])", r"\1", part).strip()
+        if part.lower().endswith(".pdf") and os.path.isfile(part):
+            paths.append(part)
+    return paths
 
 
 def summary(e):
@@ -94,7 +115,17 @@ def summary(e):
     return {"key": e["key"], "type": e["type"], "title": title, "year": f.get("year") or f.get("date", "")[:4],
             "doi": doi, "arxiv": arxiv,
             "venue": venue,
-            "is_preprint": (bool(arxiv) and not venue) or (doi or "").startswith("10.48550/")}
+            "is_preprint": (bool(arxiv) and not venue) or (doi or "").startswith("10.48550/"),
+            "pdfs": pdf_paths(f)}
+
+
+def copy_pdf(src, dest):
+    """Copy src to dest. Never overwrites a different existing file; returns False if dest differs."""
+    if os.path.exists(dest):
+        return filecmp.cmp(src, dest, shallow=False)
+    os.makedirs(os.path.dirname(os.path.abspath(dest)), exist_ok=True)
+    shutil.copy2(src, dest)
+    return True
 
 
 def load(path):
@@ -115,6 +146,9 @@ def main():
     sp.add_argument("--title")
     sp = sub.add_parser("show")
     sp.add_argument("key")
+    sp = sub.add_parser("pdf")
+    sp.add_argument("key")
+    sp.add_argument("--copy-to", help="copy the PDF here (never overwrites a different file)")
     a = p.parse_args()
 
     entries = load(a.bib)
@@ -127,6 +161,19 @@ def main():
                 print(e["raw"])
                 return
         sys.exit("no entry %r" % a.key)
+    elif a.cmd == "pdf":
+        entry = next((e for e in entries if e["key"] == a.key), None)
+        if not entry:
+            sys.exit("no entry %r" % a.key)
+        paths = pdf_paths(entry["fields"])
+        if not paths:
+            sys.exit("%s: no PDF attachment found (no `file` field, or the file is missing)" % a.key)
+        if a.copy_to:
+            if not copy_pdf(paths[0], a.copy_to):
+                sys.exit("%s already exists and is a different file; not overwritten" % a.copy_to)
+            print("%s -> %s" % (paths[0], a.copy_to))
+        else:
+            print(paths[0])
     else:
         sums = [summary(e) for e in entries]
         hits = []
