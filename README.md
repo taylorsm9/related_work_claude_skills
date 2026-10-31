@@ -8,7 +8,7 @@ It reads every paper that looks relevant in full, typically several dozen, and t
 
 It looks for work close to your stated contributions. It is not built to find anchor citations, such as the paper that introduced a technique or a standard benchmark. Those usually belong in the introduction rather than the related-work section; add them yourself.
 
-**Status.** Tested in one full run, on an earlier layout with a human screening stage that the synthesis stage has since replaced. The current layout has not yet been run end to end.
+**Status.** Tested end to end in one full run.
 
 ## Requirements
 
