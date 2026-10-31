@@ -8,7 +8,7 @@ It reads every paper that looks relevant in full, typically several dozen, and t
 
 It looks for work close to your stated contributions. It is not built to find anchor citations, such as the paper that introduced a technique or a standard benchmark. Those usually belong in the introduction rather than the related-work section; add them yourself.
 
-**Status.** One full test run, on an implementation paper about context pruning for retrieval-augmented generation: 505 candidates found, 69 read in full, and a section of about 850 words citing 27 papers, every citation checked against its PDF. That run used an earlier layout with a human screening stage, which the synthesis stage has since replaced; the current layout has not yet been run end to end.
+**Status.** Tested in one full run, on an earlier layout with a human screening stage that the synthesis stage has since replaced. The current layout has not yet been run end to end.
 
 ## Requirements
 
@@ -86,7 +86,7 @@ PDFs are ignored by git (`.gitignore`), since most are copyrighted. Keep that if
 
 The expand stage judges each paper against your claims, one at a time. A draft built only from those judgments tends to list papers, organize itself around your claims, and miss papers that resemble yours in ways the claims never asked about. Stage 5 builds the structure from the literature first, over every paper read in full at priority 1–2. It extracts each paper's related-work section, builds a taxonomy of how the field divides itself, summarizes each paper against that taxonomy without seeing your claims, and builds a comparison table. Only then does it add your paper, look for close work the expand-stage judgments missed, and write `notes/synthesis.md`: groups, positioning corrections, things not to say, a suggested paragraph plan, and the papers to cite. A fresh-context reviewer checks it in place of a human gate. Evidence notes are then written only for the cited papers, and each note checks what the plan says about its paper against the PDF.
 
-Cost: each paper read in full is read twice more, lightly for its related-work section and in full for its summary, plus one run each of the taxonomy builder, mapper and reviewer (reviewer up to twice). The taxonomy builder and mapper read digests built by `scripts/digest.py`, so a set of about 70 papers fits. In the test run, with 69 papers, each summary took 100–190k subagent tokens and 5–12 minutes, the taxonomy builder about 560k tokens and the mapper about 630k; the synthesis stage came to roughly 9M tokens in all. It is by far the most expensive stage.
+Cost: each paper read in full is read twice more, lightly for its related-work section and in full for its summary, plus one run each of the taxonomy builder, mapper and reviewer (reviewer up to twice). The taxonomy builder and mapper read digests built by `scripts/digest.py`, so a set of about 70 papers fits. Expect roughly 100–200k subagent tokens and 5–12 minutes per summary; with about 70 papers the stage comes to several million tokens. It is by far the most expensive stage.
 
 Background:
 - Webster & Watson's guide to literature reviews argues for organizing by concept, using a concept matrix of papers × concepts.
