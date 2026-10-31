@@ -8,8 +8,6 @@ It reads every paper that looks relevant in full, typically several dozen, and t
 
 It looks for work close to your stated contributions. It is not built to find anchor citations, such as the paper that introduced a technique or a standard benchmark. Those usually belong in the introduction rather than the related-work section; add them yourself.
 
-**Status.** Tested end to end in one full run.
-
 ## Requirements
 
 - Claude Code 2.1.292 or newer. The subagent definitions pin `model` and `effort`, and per-launch effort handling needs this version.
